@@ -54,15 +54,23 @@ $nbEnLigne = count(array_filter($enLigne));
 </head>
 <body>
     <header>
-        
+        <h1>Homelab<span>.</span></h1>
+        <p class="resume"><?= $nbEnLigne ?> / <?= count($services) ?> services en ligne</p>
+        <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
     </header>
 
-    <main>
-        
+    <main classe="grille">
+        <article class="carte x">
+            <div>
+                <h2>nom</h2>
+                <h2>Description</h2>
+            </div>
+            <span class="statut">En ligne/Hors Ligne</span>
+        </article>
     </main>
 
     <footer>
-        
+        <a href="https://github.com/titouandup/dashboard-homelab">Code source</a>
     </footer>
 </body>
 </html>
