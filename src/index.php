@@ -60,13 +60,15 @@ $nbEnLigne = count(array_filter($enLigne));
     </header>
 
     <main classe="grille">
-        <article class="carte x">
-            <div>
-                <h2>nom</h2>
-                <h2>Description</h2>
-            </div>
-            <span class="statut">En ligne/Hors Ligne</span>
-        </article>
+        <?php foreach ($services as $i => $s): ?>
+            <article class="carte x">
+                <div>
+                    <h2><?= htmlspecialchars($s['nom']) ?></h2>
+                    <h2><?= htmlspecialchars($s['desc']) ?></h2>
+                </div>
+                <span class="statut"><?= $enLigne[$i] ? 'En ligne' : 'Hors ligne' ?></span>
+            </article>
+        <?php endforeach; ?>
     </main>
 
     <footer>
