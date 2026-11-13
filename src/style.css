@@ -1,0 +1,32 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: system-ui, sans-serif;
+    background: #111827;
+    color: #e5e7eb;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header, footer { padding: 1.5rem; text-align: center; }
+main { flex: 1; padding: 1.5rem; }
+
+.services {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    display: block;
+    padding: 1rem;
+    background: #1f2937;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .15s, background .15s;
+}
+
+.card:hover { transform: translateY(-2px); background: #374151; }
+.card p { margin-top: .5rem; font-size: .9rem; color: #9ca3af; }
