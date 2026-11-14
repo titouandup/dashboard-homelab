@@ -1,58 +1,78 @@
+/* ========== Étape 1 : palette et typographie (même esprit que le portfolio) ========== */
 :root {
-  --fond: #0e0e12;
-  --carte: #1a1a21;
-  --texte: #ececf1;
-  --doux: #8b8b96;
-  --accent: #e50914;
-  --ok: #22c55e;
-  --ko: #ef4444;
+  --bg: #f6f4ef;
+  --text: #16161a;
+  --muted: #6b6b73;
+  --line: #d9d6cc;
+  --accent: #ff5a36;
+  --ok: #2f7d4f;
+  --ko: var(--accent);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: system-ui, sans-serif;
-  background: var(--fond);
-  color: var(--texte);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 1.0625rem;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 3rem 1.5rem;
+  padding: 3.5rem 1.5rem 2rem;
 }
 
-header { margin-bottom: 2rem; }
-
-h1 { font-size: 2.5rem; font-weight: 800; }
+/* ---------- Titres ---------- */
+h1 {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
 h1 span { color: var(--accent); }
 
-.resume { font-size: 1.2rem; font-weight: 600; margin-top: 0.5rem; }
-.maj { color: var(--doux); font-size: 0.9rem; }
+h2 {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* ---------- Textes ---------- */
+.resume { margin-top: 1rem; font-size: 1.125rem; font-weight: 600; }
+.maj { color: var(--muted); font-size: 0.95rem; }
+.carte p { color: var(--muted); font-size: 1rem; }
+
+/* ---------- Statut : seule la couleur change (classe ok / ko) ---------- */
+.statut { font-size: 0.95rem; font-weight: 600; white-space: nowrap; }
+.ok .statut { color: var(--ok); }
+.ko .statut { color: var(--ko); }
+
+/* ---------- Liens ---------- */
+a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 2px solid var(--accent);
+  transition: color 0.2s;
+}
+a:hover { color: var(--accent); }
+
+/* ---------- Mise en page provisoire (sera refaite à l'étape 2) ---------- */
+header { margin-bottom: 2rem; }
 
 .grille {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
 .carte {
-  background: var(--carte);
-  border-radius: 12px;
-  padding: 1.2rem 1.4rem;
+  border-top: 1px solid var(--text);
+  padding: 1.2rem 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-left: 4px solid var(--doux);
+  gap: 1rem;
 }
 
-.carte h2 { font-size: 1.1rem; }
-.carte p { color: var(--doux); font-size: 0.9rem; }
-
-.statut { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
-
-/* Une seule classe change selon l'état : la couleur suit automatiquement */
-.ok { border-left-color: var(--ok); }
-.ok .statut { color: var(--ok); }
-.ko { border-left-color: var(--ko); }
-.ko .statut { color: var(--ko); }
-
-footer { margin-top: 2rem; text-align: center; }
-footer a { color: var(--doux); }
+footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }

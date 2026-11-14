@@ -59,12 +59,12 @@ $nbEnLigne = count(array_filter($enLigne));
         <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
     </header>
 
-    <main classe="grille">
+    <main class="grille">
         <?php foreach ($services as $i => $s): ?>
-            <article class="carte x">
+            <article class="carte <?= $enLigne[$i] ? 'ok' : 'ko' ?>">
                 <div>
                     <h2><?= htmlspecialchars($s['nom']) ?></h2>
-                    <h2><?= htmlspecialchars($s['desc']) ?></h2>
+                    <p><?= htmlspecialchars($s['desc']) ?></p>
                 </div>
                 <span class="statut"><?= $enLigne[$i] ? 'En ligne' : 'Hors ligne' ?></span>
             </article>
