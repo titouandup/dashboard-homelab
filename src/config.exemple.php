@@ -1,6 +1,4 @@
 <?php
-// Liste des services surveillés par le dashboard.
-// ⚠️ Ce fichier contient les adresses internes : il est dans .gitignore, ne le publie jamais.
 
 // IP locale de chaque machine (à compléter, voir la commande dans la réponse)
 $ip = [
