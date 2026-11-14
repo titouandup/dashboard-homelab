@@ -86,3 +86,7 @@ dashboard/
 - [ ] **v3** : rafraîchissement automatique en JavaScript (`fetch` + JSON)
 - [ ] **v4** : historique en base SQLite et graphiques (Chart.js)
 - [ ] **v5** : température intérieure depuis un capteur ESP32 via Home Assistant
+
+# Accès
+
+https://dashboard.dupouyfam.duckdns.org/
