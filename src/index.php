@@ -8,7 +8,7 @@ function verifierServices(array $services): array
 {
     $multi = curl_multi_init();
     $requetes = [];
-    // Prépare une requête cURL par service et l'ajoute au lot parallèle
+    
     foreach ($services as $i => $s) {
         $ch = curl_init($s['url']);
         curl_setopt_array($ch, [
@@ -21,23 +21,23 @@ function verifierServices(array $services): array
         curl_multi_add_handle($multi, $ch);
         $requetes[$i] = $ch;
     }
- 
+
     do {
         curl_multi_exec($multi, $enCours);
         curl_multi_select($multi);
     } while ($enCours > 0);
- 
+
     $resultats = [];
-    // Récupère le code HTTP de chaque requête, puis libère les handles
     foreach ($requetes as $i => $ch) {
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // Réponse HTTP => le service tourne
-        $resultats[$i] = $code > 0 && $code < 500;
+        // Toute réponse HTTP (même 401, 404 ou 501) prouve que le service tourne.
+        // Proxmox, par exemple, répond 501 aux requêtes HEAD : il est pourtant bien en ligne.
+        $resultats[$i] = $code > 0;
         curl_multi_remove_handle($multi, $ch);
         curl_close($ch);
     }
     curl_multi_close($multi);
- 
+
     return $resultats;
 }
  

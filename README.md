@@ -53,7 +53,7 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/titouandup/dashboard.git
+git clone https://github.com/titouandup/dashboard-homelab.git
 cd dashboard
 cp src/config.example.php src/config.php
 nano src/config.php      # renseigner les adresses locales des services

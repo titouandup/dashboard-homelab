@@ -1,6 +1,6 @@
 <?php
 
-// IP locale de chaque machine (à compléter, voir la commande dans la réponse)
+// IP locale de chaque machine (à compléter)
 $ip = [
     'proxmox'   => '192.168.1.XX',  // hôte pve
     'jellyfin'  => '192.168.1.XX',  // LXC 100
@@ -15,6 +15,6 @@ return [
     ['nom' => 'AdGuard Home',   'desc' => 'DNS filtrant',     'url' => "http://{$ip['adguard']}"],
     ['nom' => 'Immich',         'desc' => 'Galerie photos',   'url' => "http://{$ip['immich']}:2283"],
     ['nom' => 'Vaultwarden',    'desc' => 'Mots de passe',    'url' => "http://{$ip['docker']}:8222"],
-    ['nom' => 'Home Assistant', 'desc' => 'Domotique',        'url' => "http://{$ip['homeassistant']}:8123"],
+    ['nom' => 'Home Assistant', 'desc' => 'Domotique',        'url' => "http://{$ip['homeassistant']}"],
     ['nom' => 'Proxmox',        'desc' => 'Hyperviseur',      'url' => "https://{$ip['proxmox']}:8006"],
 ];
