@@ -90,6 +90,7 @@ function statutProxmoxEnCache(): ?array
  
 $enLigne = verifierServices($services);
 $nbEnLigne = count(array_filter($enLigne));
+$serveur = statutProxmoxEnCache();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -119,6 +120,22 @@ $nbEnLigne = count(array_filter($enLigne));
         <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
         <button id="theme" class="bouton" type="button" aria-label="Changer de thème"></button>
     </header>
+
+    <?php if ($serveur): ?>
+        <section class="serveur">
+            <h2>Serveur</h2>
+            <div class="mesures">
+                <?php foreach (['cpu' => 'CPU', 'ram' => 'RAM', 'disque' => 'Disque'] as $cle => $nom): ?>
+                    <?php $valeur = (int) $serveur[$cle]; ?>
+                    <div>
+                        <span class="mesure-nom"><?= $nom ?></span>
+                        <strong><?= $valeur ?> %</strong>
+                        <div class="barre"><div style="width: <?= $valeur ?>%"></div></div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <main class="grille">
         <?php foreach ($services as $i => $s): ?>
