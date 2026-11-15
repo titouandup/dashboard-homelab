@@ -6,7 +6,6 @@
   --line: #d9d6cc;
   --accent: #ff5a36;
   --ok: #2f7d4f;
-  --ko: var(--accent);
   color-scheme: light;
 }
 
@@ -54,18 +53,20 @@ h2 {
 .maj { color: var(--muted); font-size: 0.95rem; }
 .carte p { color: var(--muted); font-size: 1rem; }
 
-/* ---------- Statut : seule la couleur change (classe ok / ko) ---------- */
+/* ---------- Statut : la carte (ok / ko) fixe --etat, la pastille l'utilise ---------- */
+.ok { --etat: var(--ok); }
+.ko { --etat: var(--accent); }
+
 /* Pastille pleine : lisible d'un coup d'œil, même sans lire le texte */
 .statut {
   font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
   color: var(--bg);
+  background: var(--etat);
   border-radius: 999px;
   padding: 0.25rem 0.9rem;
 }
-.ok .statut { background: var(--ok); }
-.ko .statut { background: var(--ko); }
 
 /* ---------- Liens ---------- */
 a {
@@ -121,6 +122,6 @@ header { position: relative; margin-bottom: 2rem; }
 .carte:hover { padding-left: 2rem; }  /* même survol que les projets du portfolio */
 
 /* Un service hors ligne se repère au premier coup d'œil : cadre orange */
-.ko { border-color: var(--ko); }
+.ko { border-color: var(--etat); }
 
 footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
