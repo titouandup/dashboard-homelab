@@ -5,9 +5,9 @@ $services = require __DIR__ . '/config.php';
  
 require __DIR__ . '/fonctions.php';
  
-$enLigne = verifierServices($services);
+$enLigne = enCache('services', 30, fn() => verifierServices($services));
 $nbEnLigne = count(array_filter($enLigne));
-$serveur = statutProxmoxEnCache();
+$serveur = enCache('proxmox', 30, 'lireStatutProxmox');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
