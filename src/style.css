@@ -49,7 +49,13 @@ h2 {
 }
 
 /* ---------- Textes ---------- */
-.resume { margin-top: 1rem; font-size: 1.125rem; font-weight: 600; }
+.resume { margin-top: 1rem; color: var(--muted); }
+/* Le chiffre ressort un peu du texte gris, sans voler la vedette au titre */
+.resume strong {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
 .maj { color: var(--muted); font-size: 0.95rem; }
 .carte p { color: var(--muted); font-size: 1rem; }
 

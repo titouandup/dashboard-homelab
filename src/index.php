@@ -68,7 +68,7 @@ $nbEnLigne = count(array_filter($enLigne));
 <body>
     <header>
         <h1>Homelab<span>.</span></h1>
-        <p class="resume"><?= $nbEnLigne ?> / <?= count($services) ?> services en ligne</p>
+        <p class="resume"><strong><?= $nbEnLigne ?> / <?= count($services) ?></strong> services en ligne</p>
         <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
         <button id="theme" class="bouton" type="button" aria-label="Changer de thème"></button>
     </header>
