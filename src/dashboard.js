@@ -38,3 +38,22 @@ function mettreAJourPage(etat) {
     document.getElementById('resume').textContent = nbEnLigne + ' / ' + etat.services.length;
     document.getElementById('heure').textContent = etat.heure;
 }
+
+// Redemande l'état à l'API. En cas de problème, la page garde ses dernières valeurs.
+async function rafraichir() {
+    try {
+        const reponse = await fetch('api.php');
+        if (!reponse.ok) {
+            return;
+        }
+        const etat = await reponse.json();
+        if (!Array.isArray(etat?.services)) {
+            return;
+        }
+        mettreAJourPage(etat);
+    } catch (erreur) {
+        console.error(erreur);   // réseau coupé ou JSON invalide : rien d'affiché dans la page
+    }
+}
+
+setInterval(rafraichir, 30000);
