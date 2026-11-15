@@ -131,6 +131,26 @@ header { position: relative; margin-bottom: 2rem; }
 /* Un service hors ligne se repère au premier coup d'œil : cadre orange */
 .ko { border-color: var(--etat); }
 
+/* ---------- Bloc serveur (CPU, RAM, disque) : même cadre que les cartes ---------- */
+.serveur {
+  border: 2px solid var(--text);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.mesures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.mesure-nom { display: block; color: var(--muted); font-size: 0.95rem; }
+.mesures strong { display: block; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+
+/* Fine barre : le remplissage est la largeur en % posée par le PHP */
+.barre { height: 6px; margin-top: 0.5rem; border-radius: 999px; background: var(--line); overflow: hidden; }
+.barre div { height: 100%; background: var(--text); }
+
 footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
 
 /* ---------- Petits écrans (téléphone) ---------- */
