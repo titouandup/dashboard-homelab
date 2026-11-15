@@ -164,6 +164,9 @@ footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
   .grille { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
   .carte { flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 1rem; }
   .carte:hover { padding-left: 1rem; }  /* pas de décalage au toucher */
+  .serveur { padding: 1rem; margin-bottom: 0.75rem; }
+  .mesures { gap: 0.75rem; }
+  .mesures strong { font-size: 1.25rem; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.1rem; }
   .carte p { font-size: 0.9rem; }
