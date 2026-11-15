@@ -16,12 +16,14 @@ flowchart LR
     d -- réseau local --> s2[Immich]
     d -- réseau local --> s3[Home Assistant]
     d -- réseau local --> s4[…]
+    d -- API en lecture seule --> p[API Proxmox]
 ```
 
 1. Le visiteur ouvre la page.
 2. Le serveur PHP interroge **en parallèle** chaque service sur le réseau local (`curl_multi`, timeout 2 s).
 3. Toute réponse HTTP prouve que le service tourne : il est affiché **En ligne**, sinon **Hors ligne**.
-4. Le visiteur reçoit uniquement le résultat : jamais les adresses ni les ports internes.
+4. Il lit aussi le CPU, la RAM et le disque du serveur via l'API Proxmox. Le résultat est **mis en cache 30 s** : au plus un appel toutes les 30 s, quel que soit le nombre de visiteurs. Si l'API ne répond pas, le bloc est simplement masqué.
+5. Le visiteur reçoit uniquement le résultat : jamais les adresses ni les ports internes.
 
 ---
 
@@ -30,7 +32,9 @@ flowchart LR
 Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien révéler et ne rien permettre** :
 
 - **Lecture seule** : aucune action possible (pas de redémarrage, pas de connexion).
-- **Aucune adresse interne publiée** : les IP et ports sont dans `src/config.php`, ignoré par Git. Le dépôt ne contient qu'un modèle (`config.example.php`).
+- **Aucune adresse interne publiée** : les IP et ports sont dans `src/config.php`, ignoré par Git. Le dépôt ne contient qu'un modèle (`config.exemple.php`).
+- **Token Proxmox en lecture seule** (rôle `PVEAuditor`), stocké dans un `.env` ignoré par Git. Il est placé à la racine du dépôt, hors de `src/` : il n'est donc jamais servi par le site.
+- **Cache de 30 s** : recharger la page en boucle ne provoque pas d'appels en rafale vers Proxmox.
 - **Pas de SSRF** : les URL testées sont fixées côté serveur ; le visiteur ne peut pas choisir ce que le serveur interroge.
 - **Échappement des sorties** avec `htmlspecialchars()`.
 - **Code monté en lecture seule** dans le conteneur (`:ro`).
@@ -43,6 +47,7 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 | Rôle | Outil |
 |---|---|
 | Back-end | PHP 8.3 (cURL) |
+| Supervision | API REST Proxmox (token en lecture seule) |
 | Front-end | HTML, CSS |
 | Serveur | Apache (image `php:8.3-apache`) |
 | Déploiement | Docker Compose |
@@ -54,9 +59,10 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 
 ```bash
 git clone https://github.com/titouandup/dashboard-homelab.git
-cd dashboard
-cp src/config.example.php src/config.php
+cd dashboard-homelab
+cp src/config.exemple.php src/config.php
 nano src/config.php      # renseigner les adresses locales des services
+nano .env                # PROXMOX_URL, PROXMOX_NODE, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET
 docker compose up -d
 ```
 
@@ -64,17 +70,20 @@ Le dashboard est alors disponible sur `http://<ip-du-serveur>:8090`.
 
 Ajouter un service = ajouter une ligne dans `src/config.php`, sans toucher au code.
 
+Le token Proxmox se crée dans l'interface (Datacenter → Permissions) : un utilisateur dédié avec le rôle `PVEAuditor`, puis un token sans séparation de privilèges. Sans `.env` valide, le bloc « Serveur » n'est pas affiché, mais les statuts des services continuent de fonctionner.
+
 ---
 
 ## 📁 Structure
 
 ```
-dashboard/
+dashboard-homelab/
 ├── docker-compose.yml
+├── .env                     secrets Proxmox (ignoré par Git, hors de src/)
 └── src/
-    ├── index.php            vérifie les services et affiche la page
-    ├── style.css
-    └── config.example.php   modèle de configuration
+    ├── index.php            vérifie les services, lit l'API Proxmox, affiche la page
+    ├── style.css            style, thème jour / nuit, affichage téléphone
+    └── config.exemple.php   modèle de configuration
 ```
 
 ---
@@ -82,11 +91,19 @@ dashboard/
 ## 🗺️ Feuille de route
 
 - [x] **v1** : statut en ligne / hors ligne de chaque service
-- [ ] **v2** : CPU, RAM et disque du serveur via l'API Proxmox (token en lecture seule, mise en cache)
+- [x] **v2** : nouveau style, CPU, RAM et disque du serveur via l'API Proxmox (token en lecture seule, mise en cache)
 - [ ] **v3** : rafraîchissement automatique en JavaScript (`fetch` + JSON)
 - [ ] **v4** : historique en base SQLite et graphiques (Chart.js)
 - [ ] **v5** : température intérieure depuis un capteur ESP32 via Home Assistant
 
-# Accès
+---
 
-https://dashboard.dupouyfam.duckdns.org/
+## 🌐 Accès
+
+Le dashboard est en ligne, hébergé sur mon propre serveur :
+
+**👉 https://dashboard.dupouyfam.duckdns.org/**
+
+- Aucun compte ni connexion : la page est publique et en lecture seule.
+- Les statuts et les mesures du serveur sont relus à chaque chargement de la page (les mesures sont mises en cache 30 s).
+- Il tourne sur un petit serveur à la maison : une coupure ou une maintenance peut le rendre indisponible de temps en temps.
