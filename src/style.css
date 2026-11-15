@@ -55,9 +55,17 @@ h2 {
 .carte p { color: var(--muted); font-size: 1rem; }
 
 /* ---------- Statut : seule la couleur change (classe ok / ko) ---------- */
-.statut { font-size: 0.95rem; font-weight: 600; white-space: nowrap; }
-.ok .statut { color: var(--ok); }
-.ko .statut { color: var(--ko); }
+/* Pastille pleine : lisible d'un coup d'œil, même sans lire le texte */
+.statut {
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--bg);
+  border-radius: 999px;
+  padding: 0.25rem 0.9rem;
+}
+.ok .statut { background: var(--ok); }
+.ko .statut { background: var(--ko); }
 
 /* ---------- Liens ---------- */
 a {
