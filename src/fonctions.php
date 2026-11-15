@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('Europe/Paris');
+
 // Teste tous les services EN PARALLÈLE (sinon 6 services x 2 s = 12 s d'attente)
 function verifierServices(array $services): array
 {
@@ -92,4 +94,14 @@ function enCache(string $nom, int $duree, callable $calcul): mixed
         rename($temporaire, $fichier);
     }
     return $resultat;
+}
+
+// Rassemble tout ce que la page et le JSON affichent : un seul endroit, donc jamais d'écart entre les deux.
+function etatDuDashboard(array $services): array
+{
+    return [
+        'services' => enCache('services', 30, fn() => verifierServices($services)),
+        'serveur'  => enCache('proxmox', 30, 'lireStatutProxmox'),
+        'heure'    => date('H:i:s'),
+    ];
 }

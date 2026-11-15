@@ -1,13 +1,12 @@
 <?php
-date_default_timezone_set('Europe/Paris');
- 
-$services = require __DIR__ . '/config.php';
- 
 require __DIR__ . '/fonctions.php';
- 
-$enLigne = enCache('services', 30, fn() => verifierServices($services));
+
+$services = require __DIR__ . '/config.php';
+$etat = etatDuDashboard($services);
+
+$enLigne = $etat['services'];
+$serveur = $etat['serveur'];
 $nbEnLigne = count(array_filter($enLigne));
-$serveur = enCache('proxmox', 30, 'lireStatutProxmox');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -34,7 +33,7 @@ $serveur = enCache('proxmox', 30, 'lireStatutProxmox');
     <header>
         <h1>Homelab<span>.</span></h1>
         <p class="resume"><strong><?= $nbEnLigne ?> / <?= count($services) ?></strong> services en ligne</p>
-        <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
+        <p class="maj">Vérifié à <?= $etat['heure'] ?></p>
         <button id="theme" class="bouton" type="button" aria-label="Changer de thème"></button>
     </header>
 
