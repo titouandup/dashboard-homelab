@@ -32,26 +32,24 @@ $nbEnLigne = count(array_filter($enLigne));
 <body>
     <header>
         <h1>Homelab<span>.</span></h1>
-        <p class="resume"><strong><?= $nbEnLigne ?> / <?= count($services) ?></strong> services en ligne</p>
-        <p class="maj">Vérifié à <?= $etat['heure'] ?></p>
+        <p class="resume"><strong id="resume"><?= $nbEnLigne ?> / <?= count($services) ?></strong> services en ligne</p>
+        <p class="maj">Mis à jour à <span id="heure"><?= $etat['heure'] ?></span></p>
         <button id="theme" class="bouton" type="button" aria-label="Changer de thème"></button>
     </header>
 
-    <?php if ($serveur): ?>
-        <section class="serveur">
-            <h2>Serveur</h2>
-            <div class="mesures">
-                <?php foreach (['cpu' => 'CPU', 'ram' => 'RAM', 'disque' => 'Disque'] as $cle => $nom): ?>
-                    <?php $valeur = (int) $serveur[$cle]; ?>
-                    <div>
-                        <span class="mesure-nom"><?= $nom ?></span>
-                        <strong><?= $valeur ?> %</strong>
-                        <div class="barre"><div style="width: <?= $valeur ?>%"></div></div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endif; ?>
+    <section class="serveur" id="serveur" <?= $serveur ? '' : 'hidden' ?>>
+        <h2>Serveur</h2>
+        <div class="mesures">
+            <?php foreach (['cpu' => 'CPU', 'ram' => 'RAM', 'disque' => 'Disque'] as $cle => $nom): ?>
+                <?php $valeur = (int) ($serveur[$cle] ?? 0); ?>
+                <div data-mesure="<?= $cle ?>">
+                    <span class="mesure-nom"><?= $nom ?></span>
+                    <strong><?= $valeur ?> %</strong>
+                    <div class="barre"><div style="width: <?= $valeur ?>%"></div></div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
 
     <main class="grille">
         <?php foreach ($services as $i => $s): ?>
