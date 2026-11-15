@@ -51,12 +51,26 @@ $nbEnLigne = count(array_filter($enLigne));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Thème : choix mémorisé, sinon réglage du système. Posé dans le <head> pour éviter le flash.
+        const theme = localStorage.getItem('theme')
+            || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#theme')) return;
+            const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.dataset.theme = next;
+            localStorage.setItem('theme', next);
+        });
+    </script>
 </head>
 <body>
     <header>
         <h1>Homelab<span>.</span></h1>
         <p class="resume"><?= $nbEnLigne ?> / <?= count($services) ?> services en ligne</p>
         <p class="maj">Vérifié à <?= date('H:i:s') ?></p>
+        <button id="theme" class="bouton" type="button" aria-label="Changer de thème"></button>
     </header>
 
     <main class="grille">
