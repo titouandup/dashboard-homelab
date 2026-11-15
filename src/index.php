@@ -40,6 +40,37 @@ function verifierServices(array $services): array
 
     return $resultats;
 }
+
+// Lit le CPU, la RAM et le disque du serveur via l'API Proxmox (token en lecture seule, voir .env).
+// Renvoie null au moindre échec : la page n'affiche alors rien, sans détail technique.
+function lireStatutProxmox(): ?array
+{
+    $url = getenv('PROXMOX_URL') . '/api2/json/nodes/' . getenv('PROXMOX_NODE') . '/status';
+    $jeton = 'PVEAPIToken=' . getenv('PROXMOX_TOKEN_ID') . '=' . getenv('PROXMOX_TOKEN_SECRET');
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 3,
+        CURLOPT_SSL_VERIFYPEER => false,   // certificat auto-signé de Proxmox
+        CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_HTTPHEADER     => ['Authorization: ' . $jeton],
+    ]);
+    $reponse = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $data = ($reponse !== false && $code === 200) ? (json_decode($reponse, true)['data'] ?? null) : null;
+    if (!$data) {
+        return null;
+    }
+
+    return [
+        'cpu'    => round($data['cpu'] * 100),
+        'ram'    => round($data['memory']['used'] / $data['memory']['total'] * 100),
+        'disque' => round($data['rootfs']['used'] / $data['rootfs']['total'] * 100),
+    ];
+}
  
 $enLigne = verifierServices($services);
 $nbEnLigne = count(array_filter($enLigne));
