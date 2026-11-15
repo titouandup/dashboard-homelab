@@ -132,3 +132,19 @@ header { position: relative; margin-bottom: 2rem; }
 .ko { border-color: var(--etat); }
 
 footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
+
+/* ---------- Petits écrans (téléphone) ---------- */
+@media (max-width: 600px) {
+  body { padding-top: 2rem; }
+
+  /* Le bouton passe sous le texte au lieu de flotter sur le titre */
+  .bouton { position: static; margin-top: 1rem; }
+
+  /* 2 colonnes, cartes toutes identiques : nom, description, puis pastille */
+  .grille { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .carte { flex-direction: column; align-items: flex-start; gap: 0.75rem; padding: 1rem; }
+  .carte:hover { padding-left: 1rem; }  /* pas de décalage au toucher */
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.1rem; }
+  .carte p { font-size: 0.9rem; }
+}
