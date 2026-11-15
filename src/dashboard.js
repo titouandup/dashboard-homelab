@@ -27,3 +27,14 @@ function mettreAJourServeur(serveur) {
         ligne.querySelector('.barre div').style.width = valeur + '%';
     }
 }
+
+// Applique l'état reçu de l'API à toute la page.
+// La forme de etat est vérifiée une seule fois, dans rafraichir() : pas de contrôle ici.
+function mettreAJourPage(etat) {
+    mettreAJourServices(etat.services);
+    mettreAJourServeur(etat.serveur);
+
+    const nbEnLigne = etat.services.filter(Boolean).length;
+    document.getElementById('resume').textContent = nbEnLigne + ' / ' + etat.services.length;
+    document.getElementById('heure').textContent = etat.heure;
+}
