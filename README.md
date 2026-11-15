@@ -1,6 +1,15 @@
+  _____                                          
+ |  __ \   __      |   |     __    __         |  
+ | |  | | /  \  __ |__ |__  /  \  /  \ |__  __|  
+ | |  | || () |/__ |  \|  \| () || () ||  \/  |  
+ | |__| | \__/  __/|  ||__/ \__/  \__/ |  |   |  
+ |_____/     \                       \     \__/  
+                                                 
+                                                 
+
 # 📊 Dashboard Homelab
 
-Page web publique qui affiche en temps réel l'état des services de mon [homelab](https://github.com/titouandup/homelab) : qui est en ligne, qui est hors ligne.
+Page web publique qui affiche l'état des services de mon [homelab](https://github.com/titouandup/homelab) : qui est en ligne, qui est hors ligne, et la charge du serveur. La page se met à jour toute seule toutes les 30 secondes.
 
 Hébergée sur le homelab lui-même, dans un conteneur Docker, et exposée en HTTPS via Nginx Proxy Manager.
 
@@ -17,13 +26,17 @@ flowchart LR
     d -- réseau local --> s3[Home Assistant]
     d -- réseau local --> s4[…]
     d -- API en lecture seule --> p[API Proxmox]
+    v -. toutes les 30 s .-> a[api.php<br/>JSON]
+    a --> d
 ```
 
-1. Le visiteur ouvre la page.
-2. Le serveur PHP interroge **en parallèle** chaque service sur le réseau local (`curl_multi`, timeout 2 s).
+1. Le visiteur ouvre la page : le serveur PHP la génère complète.
+2. Il interroge **en parallèle** chaque service sur le réseau local (`curl_multi`, timeout 2 s).
 3. Toute réponse HTTP prouve que le service tourne : il est affiché **En ligne**, sinon **Hors ligne**.
-4. Il lit aussi le CPU, la RAM et le disque du serveur via l'API Proxmox. Le résultat est **mis en cache 30 s** : au plus un appel toutes les 30 s, quel que soit le nombre de visiteurs. Si l'API ne répond pas, le bloc est simplement masqué.
-5. Le visiteur reçoit uniquement le résultat : jamais les adresses ni les ports internes.
+4. Il lit aussi le CPU, la RAM et le disque du serveur via l'API Proxmox. Si l'API ne répond pas, le bloc est simplement masqué.
+5. Les résultats sont **mis en cache 30 s**, échecs compris : au plus une série de tests toutes les 30 s, quel que soit le nombre de visiteurs ou d'onglets ouverts.
+6. Le visiteur reçoit uniquement le résultat : jamais les adresses ni les ports internes.
+7. Ensuite, un petit script JavaScript redemande l'état à `api.php` toutes les 30 s et met la page à jour **sans la recharger**. Si la requête échoue, la page garde ses dernières valeurs.
 
 ---
 
@@ -34,9 +47,11 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 - **Lecture seule** : aucune action possible (pas de redémarrage, pas de connexion).
 - **Aucune adresse interne publiée** : les IP et ports sont dans `src/config.php`, ignoré par Git. Le dépôt ne contient qu'un modèle (`config.exemple.php`).
 - **Token Proxmox en lecture seule** (rôle `PVEAuditor`), stocké dans un `.env` ignoré par Git. Il est placé à la racine du dépôt, hors de `src/` : il n'est donc jamais servi par le site.
-- **Cache de 30 s** : recharger la page en boucle ne provoque pas d'appels en rafale vers Proxmox.
+- **Cache de 30 s** (services et Proxmox, échecs compris) : recharger la page ou appeler l'API en boucle ne provoque pas d'appels en rafale vers le réseau interne.
 - **Pas de SSRF** : les URL testées sont fixées côté serveur ; le visiteur ne peut pas choisir ce que le serveur interroge.
-- **Échappement des sorties** avec `htmlspecialchars()`.
+- **API JSON minimale** : `api.php` ne prend aucun paramètre et renvoie champ par champ (liste blanche) uniquement des booléens, des pourcentages et l'heure. Aucun nom, aucune adresse.
+- **Erreurs PHP jamais affichées** : un `php.ini` désactive `display_errors`, elles vont dans les logs du conteneur. Une erreur ne révèle donc jamais le chemin des fichiers du serveur.
+- **Échappement des sorties** : `htmlspecialchars()` côté PHP, `textContent` (jamais `innerHTML`) côté JavaScript.
 - **Code monté en lecture seule** dans le conteneur (`:ro`).
 - Seul le dashboard est exposé : les services surveillés restent inaccessibles depuis l'extérieur.
 
@@ -48,7 +63,7 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 |---|---|
 | Back-end | PHP 8.3 (cURL) |
 | Supervision | API REST Proxmox (token en lecture seule) |
-| Front-end | HTML, CSS |
+| Front-end | HTML, CSS, JavaScript (`fetch`, sans bibliothèque) |
 | Serveur | Apache (image `php:8.3-apache`) |
 | Déploiement | Docker Compose |
 | Exposition | Nginx Proxy Manager + Let's Encrypt |
@@ -79,9 +94,13 @@ Le token Proxmox se crée dans l'interface (Datacenter → Permissions) : un uti
 ```
 dashboard-homelab/
 ├── docker-compose.yml
+├── php.ini                  erreurs PHP dans les logs, jamais dans la page
 ├── .env                     secrets Proxmox (ignoré par Git, hors de src/)
 └── src/
-    ├── index.php            vérifie les services, lit l'API Proxmox, affiche la page
+    ├── index.php            affiche la page
+    ├── api.php              renvoie l'état en JSON pour le rafraîchissement
+    ├── fonctions.php        tests des services, API Proxmox, cache
+    ├── dashboard.js         met la page à jour toutes les 30 s
     ├── style.css            style, thème jour / nuit, affichage téléphone
     └── config.exemple.php   modèle de configuration
 ```
@@ -92,7 +111,7 @@ dashboard-homelab/
 
 - [x] **v1** : statut en ligne / hors ligne de chaque service
 - [x] **v2** : nouveau style, CPU, RAM et disque du serveur via l'API Proxmox (token en lecture seule, mise en cache)
-- [ ] **v3** : rafraîchissement automatique en JavaScript (`fetch` + JSON)
+- [x] **v3** : rafraîchissement automatique en JavaScript (`fetch` + JSON), cache des services, `php.ini` de production
 - [ ] **v4** : historique en base SQLite et graphiques (Chart.js)
 - [ ] **v5** : température intérieure depuis un capteur ESP32 via Home Assistant
 
@@ -105,5 +124,5 @@ Le dashboard est en ligne, hébergé sur mon propre serveur :
 **👉 https://dashboard.dupouyfam.duckdns.org/**
 
 - Aucun compte ni connexion : la page est publique et en lecture seule.
-- Les statuts et les mesures du serveur sont relus à chaque chargement de la page (les mesures sont mises en cache 30 s).
+- La page se met à jour toute seule toutes les 30 s : l'heure « Mis à jour à » indique le dernier rafraîchissement.
 - Il tourne sur un petit serveur à la maison : une coupure ou une maintenance peut le rendre indisponible de temps en temps.
