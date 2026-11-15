@@ -7,6 +7,17 @@
   --accent: #ff5a36;
   --ok: #2f7d4f;
   --ko: var(--accent);
+  color-scheme: light;
+}
+
+/* Thème nuit : seules les variables changent, le reste du CSS ne bouge pas */
+:root[data-theme="dark"] {
+  --bg: #16161a;
+  --text: #f6f4ef;
+  --muted: #9a9aa3;
+  --line: #2e2e35;
+  --ok: #4ade80;
+  color-scheme: dark;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -57,8 +68,30 @@ a {
 }
 a:hover { color: var(--accent); }
 
+/* ---------- Bouton de thème (style bouton du portfolio) ---------- */
+.bouton {
+  /* Coin haut droit de l'en-tête (le header sert de repère de position) */
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 2px solid var(--text);
+  border-radius: 999px;
+  padding: 0.3rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.bouton:hover { border-color: var(--accent); color: var(--accent); }
+/* Le libellé annonce l'action : on affiche le mode vers lequel on bascule */
+.bouton::before { content: "Mode nuit"; }
+:root[data-theme="dark"] .bouton::before { content: "Mode jour"; }
+
 /* ---------- Mise en page provisoire (sera refaite à l'étape 2) ---------- */
-header { margin-bottom: 2rem; }
+header { position: relative; margin-bottom: 2rem; }
 
 .grille {
   display: grid;
