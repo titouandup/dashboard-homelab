@@ -96,16 +96,23 @@ header { position: relative; margin-bottom: 2rem; }
 .grille {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
+/* Chaque service = un vrai bloc encadré, bien détaché des voisins */
 .carte {
-  border-top: 1px solid var(--text);
-  padding: 1.2rem 0;
+  border: 2px solid var(--text);
+  border-radius: 12px;
+  padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  transition: padding-left 0.25s ease;
 }
+.carte:hover { padding-left: 2rem; }  /* même survol que les projets du portfolio */
+
+/* Un service hors ligne se repère au premier coup d'œil : cadre orange */
+.ko { border-color: var(--ko); }
 
 footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
