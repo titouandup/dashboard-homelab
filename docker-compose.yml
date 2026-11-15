@@ -7,5 +7,7 @@ services:
       - "8090:80"    # Nginx Proxy Manager redirige le sous-domaine vers ce port
     volumes:
       - ./src:/var/www/html:ro   # lecture seule : le conteneur ne peut pas modifier le code
+    env_file:
+      - .env   # secrets (token Proxmox) : jamais dans src/, qui est la racine web publique
     environment:
       - TZ=Europe/Paris
