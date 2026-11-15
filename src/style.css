@@ -53,16 +53,17 @@ h2 {
 .maj { color: var(--muted); font-size: 0.95rem; }
 .carte p { color: var(--muted); font-size: 1rem; }
 
-/* ---------- Statut : la carte (ok / ko) fixe --etat, la pastille l'utilise ---------- */
-.ok { --etat: var(--ok); }
-.ko { --etat: var(--accent); }
+/* ---------- Statut : la carte (ok / ko) fixe la couleur de la pastille et celle de son texte ---------- */
+.ok { --etat: var(--ok);     --sur-etat: var(--bg); }
+/* Texte sombre fixe sur l'orange : 5,8:1 dans les deux thèmes (le clair ne faisait que 2,8:1) */
+.ko { --etat: var(--accent); --sur-etat: #16161a; }
 
 /* Pastille pleine : lisible d'un coup d'œil, même sans lire le texte */
 .statut {
   font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
-  color: var(--bg);
+  color: var(--sur-etat);
   background: var(--etat);
   border-radius: 999px;
   padding: 0.25rem 0.9rem;
