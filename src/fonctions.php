@@ -74,25 +74,24 @@ function lireStatutProxmox(): ?array
 }
 
 // Réutilise le dernier résultat pendant $duree secondes au lieu de le recalculer.
-// $calcul renvoie null en cas d'échec : un échec n'est jamais mis en cache.
+// $calcul renvoie null en cas d'échec. L'échec est mis en cache aussi (écrit false dans le fichier) :
+// sinon, pendant une panne, chaque visiteur relancerait l'appel et attendrait le timeout.
 function enCache(string $nom, int $duree, callable $calcul): mixed
 {
     $fichier = sys_get_temp_dir() . '/dashboard-' . $nom . '.json';
 
     if (is_file($fichier) && time() - filemtime($fichier) < $duree) {
         $contenu = json_decode(file_get_contents($fichier), true);
-        if ($contenu !== null) {
-            return $contenu;   // null = fichier vide ou corrompu : on recalcule
+        if ($contenu !== null) {   // null = fichier vide ou corrompu : on recalcule
+            return $contenu === false ? null : $contenu;
         }
     }
 
     $resultat = $calcul();
-    if ($resultat !== null) {
-        // Fichier temporaire puis rename() : atomique, un lecteur ne voit jamais un fichier à moitié écrit
-        $temporaire = tempnam(sys_get_temp_dir(), 'dashboard-');
-        file_put_contents($temporaire, json_encode($resultat));
-        rename($temporaire, $fichier);
-    }
+    // Fichier temporaire puis rename() : atomique, un lecteur ne voit jamais un fichier à moitié écrit
+    $temporaire = tempnam(sys_get_temp_dir(), 'dashboard-');
+    file_put_contents($temporaire, json_encode($resultat ?? false));
+    rename($temporaire, $fichier);
     return $resultat;
 }
 
