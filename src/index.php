@@ -71,6 +71,22 @@ function lireStatutProxmox(): ?array
         'disque' => round($data['rootfs']['used'] / $data['rootfs']['total'] * 100),
     ];
 }
+
+// Évite d'appeler Proxmox à chaque visite : on réutilise le dernier résultat pendant 30 s.
+function statutProxmoxEnCache(): ?array
+{
+    $fichier = sys_get_temp_dir() . '/dashboard-proxmox.json';
+
+    if (is_file($fichier) && time() - filemtime($fichier) < 30) {
+        return json_decode(file_get_contents($fichier), true);
+    }
+
+    $statut = lireStatutProxmox();
+    if ($statut !== null) {
+        file_put_contents($fichier, json_encode($statut), LOCK_EX);
+    }
+    return $statut;
+}
  
 $enLigne = verifierServices($services);
 $nbEnLigne = count(array_filter($enLigne));
