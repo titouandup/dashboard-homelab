@@ -2,3 +2,5 @@ src/config.php
 .env
 .env.*
 *:Zone.Identifier
+
+data/
