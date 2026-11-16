@@ -9,7 +9,7 @@
 
 # 📊 Dashboard Homelab
 
-Page web publique qui affiche l'état des services de mon [homelab](https://github.com/titouandup/homelab) : qui est en ligne, qui est hors ligne, et la charge du serveur. La page se met à jour toute seule toutes les 30 secondes.
+Page web publique qui affiche l'état des services de mon [homelab](https://github.com/titouandup/homelab) : qui est en ligne, qui est hors ligne, la charge du serveur et son historique sur 24 h. La page se met à jour toute seule toutes les 30 secondes.
 
 Hébergée sur le homelab lui-même, dans un conteneur Docker, et exposée en HTTPS via Nginx Proxy Manager.
 
@@ -28,6 +28,10 @@ flowchart LR
     d -- API en lecture seule --> p[API Proxmox]
     v -. toutes les 30 s .-> a[api.php<br/>JSON]
     a --> d
+    c[Cron toutes les 5 min] --> p
+    c --> b[(SQLite)]
+    v -. à l'ouverture .-> h[historique.php<br/>JSON]
+    h --> b
 ```
 
 1. Le visiteur ouvre la page : le serveur PHP la génère complète.
@@ -37,6 +41,8 @@ flowchart LR
 5. Les résultats sont **mis en cache 30 s**, échecs compris : au plus une série de tests toutes les 30 s, quel que soit le nombre de visiteurs ou d'onglets ouverts.
 6. Le visiteur reçoit uniquement le résultat : jamais les adresses ni les ports internes.
 7. Ensuite, un petit script JavaScript redemande l'état à `api.php` toutes les 30 s et met la page à jour **sans la recharger**. Si la requête échoue, la page garde ses dernières valeurs.
+8. Toutes les 5 minutes, une tâche planifiée (cron) lance un script en ligne de commande : il enregistre le CPU, la RAM et le disque dans une base **SQLite** et supprime les mesures de plus de 7 jours. Un visiteur ne déclenche jamais d'écriture.
+9. À l'ouverture de la page, le JavaScript demande les 24 dernières heures à `historique.php` et dessine le graphique avec Chart.js. Si le serveur Proxmox est resté injoignable un moment, la courbe se coupe à cet endroit au lieu de relier les points.
 
 ---
 
@@ -53,6 +59,9 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 - **Erreurs PHP jamais affichées** : un `php.ini` désactive `display_errors`, elles vont dans les logs du conteneur. Une erreur ne révèle donc jamais le chemin des fichiers du serveur.
 - **Échappement des sorties** : `htmlspecialchars()` côté PHP, `textContent` (jamais `innerHTML`) côté JavaScript.
 - **Code monté en lecture seule** dans le conteneur (`:ro`).
+- **Historique écrit uniquement par le cron** : un visiteur ne peut rien enregistrer. `historique.php` est en lecture seule, sans paramètre, et répond par une erreur 500 sans aucun détail si la base est illisible.
+- **Un seul dossier inscriptible** : `data/`, qui contient la base SQLite (ignorée par Git). Le script du cron est monté en lecture seule, hors de la racine web (`bin/`).
+- **Chart.js hébergé en local** (version figée) : la page ne contacte aucun site tiers.
 - Seul le dashboard est exposé : les services surveillés restent inaccessibles depuis l'extérieur.
 
 ---
@@ -61,9 +70,11 @@ Le dashboard est exposé sur Internet, il a donc été pensé pour **ne rien ré
 
 | Rôle | Outil |
 |---|---|
-| Back-end | PHP 8.3 (cURL) |
+| Back-end | PHP 8.3 (cURL, PDO) |
 | Supervision | API REST Proxmox (token en lecture seule) |
-| Front-end | HTML, CSS, JavaScript (`fetch`, sans bibliothèque) |
+| Historique | SQLite, alimentée par une tâche cron |
+| Front-end | HTML, CSS, JavaScript (`fetch`) |
+| Graphiques | Chart.js 4.4.9, hébergé en local |
 | Serveur | Apache (image `php:8.3-apache`) |
 | Déploiement | Docker Compose |
 | Exposition | Nginx Proxy Manager + Let's Encrypt |
@@ -78,10 +89,19 @@ cd dashboard-homelab
 cp src/config.exemple.php src/config.php
 nano src/config.php      # renseigner les adresses locales des services
 nano .env                # PROXMOX_URL, PROXMOX_NODE, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET
+mkdir data && sudo chown 33:33 data   # dossier de la base SQLite, inscriptible par Apache (www-data)
 docker compose up -d
 ```
 
 Le dashboard est alors disponible sur `http://<ip-du-serveur>:8090`.
+
+Pour alimenter l'historique, ajouter une tâche cron sur la machine qui héberge Docker (`crontab -e`) :
+
+```cron
+*/5 * * * * docker exec -u www-data dashboard php /app/bin/enregistrer.php >> $HOME/dashboard-historique.log 2>&1
+```
+
+Sans cette tâche, le graphique reste masqué. Les erreurs éventuelles du script sont écrites dans le fichier de log.
 
 Ajouter un service = ajouter une ligne dans `src/config.php`, sans toucher au code.
 
@@ -96,11 +116,16 @@ dashboard-homelab/
 ├── docker-compose.yml
 ├── php.ini                  erreurs PHP dans les logs, jamais dans la page
 ├── .env                     secrets Proxmox (ignoré par Git, hors de src/)
+├── bin/
+│   └── enregistrer.php      script du cron : enregistre une mesure (hors de la racine web)
+├── data/                    base SQLite de l'historique (ignorée par Git, inscriptible)
 └── src/
     ├── index.php            affiche la page
     ├── api.php              renvoie l'état en JSON pour le rafraîchissement
-    ├── fonctions.php        tests des services, API Proxmox, cache
-    ├── dashboard.js         met la page à jour toutes les 30 s
+    ├── historique.php       renvoie les mesures des dernières 24 h en JSON
+    ├── fonctions.php        tests des services, API Proxmox, cache, base SQLite
+    ├── dashboard.js         met la page à jour toutes les 30 s et dessine le graphique
+    ├── chart.umd.min.js     Chart.js 4.4.9 (hébergé en local)
     ├── style.css            style, thème jour / nuit, affichage téléphone
     └── config.exemple.php   modèle de configuration
 ```
