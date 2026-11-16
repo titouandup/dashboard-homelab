@@ -104,3 +104,18 @@ function etatDuDashboard(array $services): array
         'heure'    => date('H:i:s'),
     ];
 }
+
+const BASE_HISTORIQUE = '/data/historique.sqlite';
+
+function ouvrirBase(): PDO
+{
+    $base = new PDO('sqlite:' . BASE_HISTORIQUE);
+    $base->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $base->exec('CREATE TABLE IF NOT EXISTS mesures (
+        heure INTEGER PRIMARY KEY, -- timestamp Unix
+        cpu REAL,
+        ram REAL,
+        disque REAL
+    )');
+    return $base;
+}
