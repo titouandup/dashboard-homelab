@@ -50,6 +50,12 @@ $nbEnLigne = count(array_filter($enLigne));
                 </div>
             <?php endforeach; ?>
         </div>
+        <div class="historique" id="historique" hidden>
+            <h3>Dernières 24 h</h3>
+            <div class="graphique">
+                <canvas id="graphique" role="img" aria-label="Courbes du CPU, de la RAM et du disque sur les dernières 24 heures"></canvas>
+            </div>
+        </div>
     </section>
 
     <main class="grille">

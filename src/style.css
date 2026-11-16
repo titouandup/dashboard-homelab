@@ -151,6 +151,11 @@ header { position: relative; margin-bottom: 2rem; }
 .barre { height: 6px; margin-top: 0.5rem; border-radius: 999px; background: var(--line); overflow: hidden; }
 .barre div { height: 100%; background: var(--text); }
 
+/* Historique : dans le même cadre que les mesures, séparé par un filet. Hauteur fixe pour Chart.js. */
+.historique { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.historique h3 { font-size: 1rem; font-weight: 600; color: var(--muted); }
+.graphique { position: relative; height: 220px; margin-top: 1rem; }
+
 footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
 
 /* ---------- Petits écrans (téléphone) ---------- */
@@ -167,6 +172,7 @@ footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
   .serveur { padding: 1rem; margin-bottom: 0.75rem; }
   .mesures { gap: 0.75rem; }
   .mesures strong { font-size: 1.25rem; }
+  .graphique { height: 180px; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.1rem; }
   .carte p { font-size: 0.9rem; }
