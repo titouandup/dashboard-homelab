@@ -133,3 +133,11 @@ function enregistrerMesure(PDO $base, ?array $mesure): void
     $base->prepare('DELETE FROM mesures WHERE heure < ?')
          ->execute([$maintenant - 7 * 86400]);
 }
+
+// Renvoie les mesures des dernières 24 h, de la plus ancienne à la plus récente.
+function lireHistorique(PDO $base): array
+{
+    $requete = $base->prepare('SELECT heure, cpu, ram, disque FROM mesures WHERE heure >= ? ORDER BY heure');
+    $requete->execute([time() - 86400]);
+    return $requete->fetchAll(PDO::FETCH_ASSOC);
+}
