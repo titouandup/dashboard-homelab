@@ -28,6 +28,7 @@ $nbEnLigne = count(array_filter($enLigne));
             localStorage.setItem('theme', next);
         });
     </script>
+    <script src="chart.umd.min.js" defer></script>
     <script src="dashboard.js" defer></script>
 </head>
 <body>
