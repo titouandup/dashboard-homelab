@@ -56,4 +56,20 @@ async function rafraichir() {
     }
 }
 
+// Récupère l'historique des 24 dernières heures.
+// Renvoie null au moindre problème ou s'il est vide : le graphique reste alors caché.
+async function chargerHistorique() {
+    try {
+        const reponse = await fetch('historique.php');
+        if (!reponse.ok) {
+            return null;
+        }
+        const mesures = await reponse.json();
+        return Array.isArray(mesures) && mesures.length > 0 ? mesures : null;
+    } catch (erreur) {
+        console.error(erreur);
+        return null;
+    }
+}
+
 setInterval(rafraichir, 30000);
