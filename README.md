@@ -136,7 +136,7 @@ dashboard-homelab/
 - [x] **v1** : statut en ligne / hors ligne de chaque service
 - [x] **v2** : nouveau style, CPU, RAM et disque du serveur via l'API Proxmox (token en lecture seule, mise en cache)
 - [x] **v3** : rafraîchissement automatique en JavaScript (`fetch` + JSON), cache des services, `php.ini` de production
-- [ ] **v4** : historique en base SQLite et graphiques (Chart.js)
+- [x] **v4** : historique en base SQLite (une mesure toutes les 5 min, conservée 7 jours) et graphique des 24 dernières heures (Chart.js)
 - [ ] **v5** : température intérieure depuis un capteur ESP32 via Home Assistant
 
 ---
