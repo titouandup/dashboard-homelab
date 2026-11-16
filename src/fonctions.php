@@ -119,3 +119,17 @@ function ouvrirBase(): PDO
     )');
     return $base;
 }
+
+// Enregistre une mesure et supprime celles de plus de 7 jours.
+// Sans mesure (Proxmox hors ligne) : rien n'est écrit, le graphique aura un trou.
+function enregistrerMesure(PDO $base, ?array $mesure): void
+{
+    if ($mesure === null) {
+        return;
+    }
+    $maintenant = time();
+    $base->prepare('INSERT OR REPLACE INTO mesures (heure, cpu, ram, disque) VALUES (?, ?, ?, ?)')
+         ->execute([$maintenant, $mesure['cpu'], $mesure['ram'], $mesure['disque']]);
+    $base->prepare('DELETE FROM mesures WHERE heure < ?')
+         ->execute([$maintenant - 7 * 86400]);
+}
