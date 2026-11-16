@@ -72,4 +72,88 @@ async function chargerHistorique() {
     }
 }
 
+const PERIODE_CRON = 5 * 60;   // secondes entre deux mesures : à garder identique à la ligne du cron
+
+// Lit une couleur du thème actuel : Chart.js dessine dans un canvas et ne comprend pas les variables CSS.
+function couleur(nom) {
+    return getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
+}
+
+// Timestamp Unix (en secondes) -> « 14:30 ».
+function formaterHeure(timestamp) {
+    return new Date(timestamp * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Dessine (ou redessine) le graphique des 24 dernières heures.
+function dessinerHistorique(mesures) {
+    Chart.getChart('graphique')?.destroy();   // sinon Chart.js refuse un 2e graphique sur le même canvas
+    const texte = couleur('--text');
+    const discret = couleur('--muted');
+    const fin = Math.ceil(Date.now() / 3600000) * 3600;   // prochaine heure pleine : les repères de l'axe tombent sur des heures rondes
+
+    // Axe X = le temps réel : une panne de Proxmox laisse un vrai trou, car spanGaps coupe la courbe dès 3 mesures manquantes
+    const courbe = (cle, nom, trait, tirets) => ({
+        label: nom,
+        data: mesures.map((m) => ({ x: m.heure, y: m[cle] })),
+        borderColor: trait,
+        borderDash: tirets,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        spanGaps: 3 * PERIODE_CRON,
+    });
+
+    new Chart(document.getElementById('graphique'), {
+        type: 'line',
+        data: {
+            datasets: [
+                courbe('cpu', 'CPU', couleur('--accent'), []),
+                courbe('ram', 'RAM', texte, []),
+                courbe('disque', 'Disque', discret, [6, 4]),
+            ],
+        },
+        options: {
+            animation: false,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: fin - 86400,
+                    max: fin,
+                    grid: { display: false },
+                    ticks: { color: discret, stepSize: 4 * 3600, maxRotation: 0, callback: formaterHeure },
+                },
+                y: { min: 0, max: 100, grid: { color: couleur('--line') }, ticks: { color: discret, callback: (v) => v + ' %' } },
+            },
+            plugins: {
+                legend: { position: 'top', labels: { color: texte } },
+                tooltip: {
+                    callbacks: {
+                        title: (elements) => formaterHeure(elements[0].parsed.x),
+                        label: (c) => c.dataset.label + ' : ' + c.parsed.y + ' %',
+                    },
+                },
+            },
+        },
+    });
+}
+
+// Au chargement : récupère l'historique, affiche le bloc et dessine le graphique.
+// Au clic sur le bouton de thème : redessine, car le canvas ne suit pas le CSS.
+async function afficherHistorique() {
+    const mesures = await chargerHistorique();
+    if (!mesures || typeof Chart === 'undefined') {
+        return;   // pas de données, erreur ou Chart.js absent : le bloc reste caché
+    }
+    document.getElementById('historique').hidden = false;
+    dessinerHistorique(mesures);
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#theme')) {
+            dessinerHistorique(mesures);
+        }
+    });
+}
+
+afficherHistorique();
 setInterval(rafraichir, 30000);
