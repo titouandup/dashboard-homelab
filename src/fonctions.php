@@ -87,6 +87,16 @@ function lireStatutProxmox(): ?array
     ];
 }
 
+// Lit la température du capteur via l'API REST de Home Assistant (token dans le .env).
+// Renvoie null au moindre échec : la page n'affiche alors rien, sans détail technique.
+function lireTemperature(): ?float
+{
+    $url = getenv('HA_URL') . '/api/states/' . getenv('HA_ENTITE_TEMPERATURE');
+    $etat = appelerApi($url, 'Bearer ' . getenv('HA_TOKEN'))['state'] ?? null;
+    // "unavailable" et "unknown" ne sont pas numériques ; is_finite() écarte "1e999" (INF)
+    return is_numeric($etat) && is_finite((float) $etat) ? round((float) $etat, 1) : null;
+}
+
 // Réutilise le dernier résultat pendant $duree secondes au lieu de le recalculer.
 // $calcul renvoie null en cas d'échec. L'échec est mis en cache aussi (écrit false dans le fichier) :
 // sinon, pendant une panne, chaque visiteur relancerait l'appel et attendrait le timeout.
