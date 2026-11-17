@@ -14,5 +14,6 @@ echo json_encode([
     'services'    => array_values($etat['services']),
     'serveur'     => $etat['serveur'],
     'temperature' => $etat['temperature'],
+    'humidite'    => $etat['humidite'],
     'heure'       => $etat['heure'],
 ]);

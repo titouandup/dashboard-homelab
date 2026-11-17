@@ -132,6 +132,8 @@ function etatDuDashboard(array $services): array
 }
 
 const BASE_HISTORIQUE = '/data/historique.sqlite';
+const RETENTION = 7 * 86400;   // les mesures plus vieilles sont supprimées
+const FENETRE   = 86400;       // durée affichée par les graphiques (24 h)
 
 function ouvrirBase(): PDO
 {
@@ -142,6 +144,11 @@ function ouvrirBase(): PDO
         cpu REAL,
         ram REAL,
         disque REAL
+    )');
+    $base->exec('CREATE TABLE IF NOT EXISTS salon (
+        heure INTEGER PRIMARY KEY, -- timestamp Unix
+        temperature REAL,
+        humidite REAL
     )');
     return $base;
 }
@@ -157,13 +164,35 @@ function enregistrerMesure(PDO $base, ?array $mesure): void
     $base->prepare('INSERT OR REPLACE INTO mesures (heure, cpu, ram, disque) VALUES (?, ?, ?, ?)')
          ->execute([$maintenant, $mesure['cpu'], $mesure['ram'], $mesure['disque']]);
     $base->prepare('DELETE FROM mesures WHERE heure < ?')
-         ->execute([$maintenant - 7 * 86400]);
+         ->execute([$maintenant - RETENTION]);
 }
 
 // Renvoie les mesures des dernières 24 h, de la plus ancienne à la plus récente.
 function lireHistorique(PDO $base): array
 {
     $requete = $base->prepare('SELECT heure, cpu, ram, disque FROM mesures WHERE heure >= ? ORDER BY heure');
-    $requete->execute([time() - 86400]);
+    $requete->execute([time() - FENETRE]);
+    return $requete->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Enregistre la température et l'humidité du salon et supprime les mesures de plus de 7 jours.
+// Les deux capteurs hors ligne : rien n'est écrit. Un seul : sa colonne reste NULL (trou dans sa courbe).
+function enregistrerSalon(PDO $base, ?float $temperature, ?float $humidite): void
+{
+    if ($temperature === null && $humidite === null) {
+        return;
+    }
+    $maintenant = time();
+    $base->prepare('INSERT OR REPLACE INTO salon (heure, temperature, humidite) VALUES (?, ?, ?)')
+         ->execute([$maintenant, $temperature, $humidite]);
+    $base->prepare('DELETE FROM salon WHERE heure < ?')
+         ->execute([$maintenant - RETENTION]);
+}
+
+// Renvoie les mesures du salon des dernières 24 h, de la plus ancienne à la plus récente.
+function lireHistoriqueSalon(PDO $base): array
+{
+    $requete = $base->prepare('SELECT heure, temperature, humidite FROM salon WHERE heure >= ? ORDER BY heure');
+    $requete->execute([time() - FENETRE]);
     return $requete->fetchAll(PDO::FETCH_ASSOC);
 }
