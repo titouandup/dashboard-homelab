@@ -39,6 +39,31 @@ function verifierServices(array $services): array
     return $resultats;
 }
 
+// Appelle une API JSON en GET avec un en-tête Authorization.
+// Renvoie le JSON décodé, ou null au moindre échec (réseau, code HTTP différent de 200, JSON invalide).
+// $autoSigne : accepte un certificat HTTPS auto-signé (cas de Proxmox en local).
+// Ne jamais ajouter CURLOPT_FOLLOWLOCATION : le token pourrait partir vers un autre hôte.
+function appelerApi(string $url, string $autorisation, bool $autoSigne = false): ?array
+{
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 3,
+        CURLOPT_SSL_VERIFYPEER => !$autoSigne,
+        CURLOPT_SSL_VERIFYHOST => $autoSigne ? 0 : 2,
+        CURLOPT_HTTPHEADER     => ['Authorization: ' . $autorisation],
+    ]);
+    $reponse = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($reponse === false || $code !== 200) {
+        return null;
+    }
+    $data = json_decode($reponse, true);
+    return is_array($data) ? $data : null;
+}
+
 // Lit le CPU, la RAM et le disque du serveur via l'API Proxmox (token en lecture seule, voir .env).
 // Renvoie null au moindre échec : la page n'affiche alors rien, sans détail technique.
 function lireStatutProxmox(): ?array
@@ -46,19 +71,8 @@ function lireStatutProxmox(): ?array
     $url = getenv('PROXMOX_URL') . '/api2/json/nodes/' . getenv('PROXMOX_NODE') . '/status';
     $jeton = 'PVEAPIToken=' . getenv('PROXMOX_TOKEN_ID') . '=' . getenv('PROXMOX_TOKEN_SECRET');
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 3,
-        CURLOPT_SSL_VERIFYPEER => false,   // certificat auto-signé de Proxmox
-        CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_HTTPHEADER     => ['Authorization: ' . $jeton],
-    ]);
-    $reponse = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $data = ($reponse !== false && $code === 200) ? (json_decode($reponse, true)['data'] ?? null) : null;
+    // true : certificat auto-signé de Proxmox
+    $data = appelerApi($url, $jeton, true)['data'] ?? null;
     // Réponse incomplète, non numérique ou totaux à 0 : on renvoie null plutôt que de planter la page
     $valeurs = [$data['cpu'] ?? null, $data['memory']['used'] ?? null, $data['memory']['total'] ?? null,
                 $data['rootfs']['used'] ?? null, $data['rootfs']['total'] ?? null];
