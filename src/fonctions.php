@@ -87,11 +87,11 @@ function lireStatutProxmox(): ?array
     ];
 }
 
-// Lit la température du capteur via l'API REST de Home Assistant (token dans le .env).
+// Lit la valeur d'un capteur Home Assistant (REST, token dans le .env), par exemple une température ou une humidité.
 // Renvoie null au moindre échec : la page n'affiche alors rien, sans détail technique.
-function lireTemperature(): ?float
+function lireCapteur(string $entite): ?float
 {
-    $url = getenv('HA_URL') . '/api/states/' . getenv('HA_ENTITE_TEMPERATURE');
+    $url = getenv('HA_URL') . '/api/states/' . $entite;
     $etat = appelerApi($url, 'Bearer ' . getenv('HA_TOKEN'))['state'] ?? null;
     // "unavailable" et "unknown" ne sont pas numériques ; is_finite() écarte "1e999" (INF)
     return is_numeric($etat) && is_finite((float) $etat) ? round((float) $etat, 1) : null;
@@ -123,9 +123,11 @@ function enCache(string $nom, int $duree, callable $calcul): mixed
 function etatDuDashboard(array $services): array
 {
     return [
-        'services' => enCache('services', 30, fn() => verifierServices($services)),
-        'serveur'  => enCache('proxmox', 30, 'lireStatutProxmox'),
-        'heure'    => date('H:i:s'),
+        'services'    => enCache('services', 30, fn() => verifierServices($services)),
+        'serveur'     => enCache('proxmox', 30, 'lireStatutProxmox'),
+        'temperature' => enCache('temperature', 30, fn() => lireCapteur(getenv('HA_ENTITE_TEMPERATURE'))),
+        'humidite'    => enCache('humidite', 30, fn() => lireCapteur(getenv('HA_ENTITE_HUMIDITE'))),
+        'heure'       => date('H:i:s'),
     ];
 }
 
