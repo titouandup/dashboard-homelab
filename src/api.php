@@ -11,7 +11,8 @@ $etat = etatDuDashboard($services);
 
 // Liste blanche : on renvoie champ par champ, pour qu'un ajout futur dans $etat ne fuite pas tout seul.
 echo json_encode([
-    'services' => array_values($etat['services']),
-    'serveur'  => $etat['serveur'],
-    'heure'    => $etat['heure'],
+    'services'    => array_values($etat['services']),
+    'serveur'     => $etat['serveur'],
+    'temperature' => $etat['temperature'],
+    'heure'       => $etat['heure'],
 ]);
