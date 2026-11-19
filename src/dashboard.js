@@ -33,17 +33,20 @@ function formaterValeur(valeur, unite) {
     return valeur.toFixed(1).replace('.', ',') + ' ' + unite;
 }
 
-// Met à jour les sections du salon : chacune est cachée si son capteur ne répond pas (null).
+// Met à jour le bloc « Salon » : chaque mesure est cachée si son capteur ne répond pas (null),
+// et le bloc entier si aucun ne répond.
 // typeof et non !valeur : 0 est une vraie mesure. Et un non-nombre ferait planter toFixed(),
 // ce qui laisserait la page à moitié rafraîchie (le résumé et l'heure sont mis à jour après).
 function mettreAJourSalon(etat) {
-    for (const section of document.querySelectorAll('[data-salon]')) {
-        const valeur = etat[section.dataset.salon];
-        section.hidden = typeof valeur !== 'number';
-        if (!section.hidden) {
-            section.querySelector('.valeur').textContent = formaterValeur(valeur, section.dataset.unite);
+    const mesures = document.querySelectorAll('[data-salon]');
+    for (const mesure of mesures) {
+        const valeur = etat[mesure.dataset.salon];
+        mesure.hidden = typeof valeur !== 'number';
+        if (!mesure.hidden) {
+            mesure.querySelector('.valeur').textContent = formaterValeur(valeur, mesure.dataset.unite);
         }
     }
+    document.getElementById('salon').hidden = [...mesures].every((m) => m.hidden);
 }
 
 // Applique l'état reçu de l'API à toute la page.
@@ -95,26 +98,28 @@ const PERIODE_CRON = 5 * 60;   // secondes entre deux mesures : à garder identi
 
 // Un graphique par bloc de la page : d'où viennent les mesures, où les dessiner, quelles courbes.
 // variable : nom de la variable CSS de la couleur (le canvas ne lit pas le CSS, voir couleur()).
-// axe : min / max figent l'axe Y ; suggestedMin / suggestedMax donnent une plage minimale qui s'élargit si besoin.
+// axes : un axe vertical par entrée, avec son unité. min / max le figent ;
+// suggestedMin / suggestedMax donnent une plage minimale qui s'élargit si besoin. Chaque courbe dit sur quel axe elle est.
 const GRAPHIQUES = [
     {
-        url: 'historique.php', bloc: 'historique', canvas: 'graphique', unite: '%',
-        axe: { min: 0, max: 100 },
+        url: 'historique.php', bloc: 'historique', canvas: 'graphique',
+        axes: { y: { unite: '%', min: 0, max: 100 } },
         courbes: [
-            { cle: 'cpu',    nom: 'CPU',    variable: '--accent', tirets: [] },
-            { cle: 'ram',    nom: 'RAM',    variable: '--text',   tirets: [] },
-            { cle: 'disque', nom: 'Disque', variable: '--muted',  tirets: [6, 4] },
+            { cle: 'cpu',    nom: 'CPU',    variable: '--accent', tirets: [],     axe: 'y' },
+            { cle: 'ram',    nom: 'RAM',    variable: '--text',   tirets: [],     axe: 'y' },
+            { cle: 'disque', nom: 'Disque', variable: '--muted',  tirets: [6, 4], axe: 'y' },
         ],
     },
     {
-        url: 'historique-salon.php', bloc: 'historique-temperature', canvas: 'graphique-temperature', unite: '°C',
-        axe: { suggestedMin: 15, suggestedMax: 30 },
-        courbes: [{ cle: 'temperature', nom: 'Température', variable: '--accent', tirets: [] }],
-    },
-    {
-        url: 'historique-salon.php', bloc: 'historique-humidite', canvas: 'graphique-humidite', unite: '%',
-        axe: { suggestedMin: 20, suggestedMax: 80 },
-        courbes: [{ cle: 'humidite', nom: 'Humidité', variable: '--text', tirets: [] }],
+        url: 'historique-salon.php', bloc: 'historique-salon', canvas: 'graphique-salon',
+        axes: {
+            y:  { unite: '°C', suggestedMin: 15, suggestedMax: 30 },
+            y1: { unite: '%',  suggestedMin: 20, suggestedMax: 80, position: 'right', grid: { drawOnChartArea: false } },
+        },
+        courbes: [
+            { cle: 'temperature', nom: 'Température', variable: '--accent', tirets: [],     axe: 'y' },
+            { cle: 'humidite',    nom: 'Humidité',    variable: '--text',   tirets: [6, 4], axe: 'y1' },
+        ],
     },
 ];
 
@@ -134,12 +139,20 @@ function dessinerHistorique(mesures, g) {
     const texte = couleur('--text');
     const discret = couleur('--muted');
     const fin = Math.ceil(Date.now() / 3600000) * 3600;   // prochaine heure pleine : les repères de l'axe tombent sur des heures rondes
-    const avecUnite = (v) => v.toLocaleString('fr-FR') + ' ' + g.unite;
+    const avecUnite = (v, unite) => v.toLocaleString('fr-FR') + ' ' + unite;
+
+    // Un axe vertical par entrée de g.axes (le salon en a deux : °C à gauche, % à droite).
+    const axes = Object.fromEntries(Object.entries(g.axes).map(([id, { unite, ...options }]) => [id, {
+        ...options,
+        grid: { color: couleur('--line'), ...options.grid },
+        ticks: { color: discret, callback: (v) => avecUnite(v, unite) },
+    }]));
 
     // Axe X = le temps réel : une panne laisse un vrai trou, car spanGaps coupe la courbe dès 3 mesures manquantes.
     // typeof : un capteur hors ligne écrit null, ce point est simplement absent de sa courbe.
-    const courbe = ({ cle, nom, variable, tirets }) => ({
+    const courbe = ({ cle, nom, variable, tirets, axe }) => ({
         label: nom,
+        yAxisID: axe,
         data: mesures.filter((m) => typeof m[cle] === 'number').map((m) => ({ x: m.heure, y: m[cle] })),
         borderColor: couleur(variable),
         borderDash: tirets,
@@ -164,14 +177,14 @@ function dessinerHistorique(mesures, g) {
                     grid: { display: false },
                     ticks: { color: discret, stepSize: 4 * 3600, maxRotation: 0, callback: formaterHeure },
                 },
-                y: { ...g.axe, grid: { color: couleur('--line') }, ticks: { color: discret, callback: avecUnite } },
+                ...axes,
             },
             plugins: {
                 legend: { display: g.courbes.length > 1, position: 'top', labels: { color: texte } },
                 tooltip: {
                     callbacks: {
                         title: (elements) => formaterHeure(elements[0].parsed.x),
-                        label: (c) => c.dataset.label + ' : ' + avecUnite(c.parsed.y),
+                        label: (c) => c.dataset.label + ' : ' + avecUnite(c.parsed.y, g.axes[c.dataset.yAxisID].unite),
                     },
                 },
             },

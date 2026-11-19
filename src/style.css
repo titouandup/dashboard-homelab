@@ -151,6 +151,11 @@ header { position: relative; margin-bottom: 2rem; }
 .mesure-nom { display: block; color: var(--muted); font-size: 0.95rem; }
 .mesures strong { display: block; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
 
+/* Bloc salon : 2 mesures au lieu de 3, chiffres plus grands */
+#salon { margin-top: 1.5rem; }
+#salon .mesures { grid-template-columns: repeat(2, 1fr); }
+#salon .mesures strong { font-size: 2.25rem; }
+
 /* Fine barre : le remplissage est la largeur en % posée par le PHP */
 .barre { height: 6px; margin-top: 0.5rem; border-radius: 999px; background: var(--line); overflow: hidden; }
 .barre div { height: 100%; background: var(--text); }
@@ -176,6 +181,8 @@ footer { margin-top: 3rem; text-align: center; font-size: 0.95rem; }
   .serveur { padding: 1rem; margin-bottom: 0.75rem; }
   .mesures { gap: 0.75rem; }
   .mesures strong { font-size: 1.25rem; }
+  #salon { margin-top: 0.75rem; }
+  #salon .mesures strong { font-size: 1.75rem; }
   h1 { font-size: 2rem; }
   h2 { font-size: 1.1rem; }
   .carte p { font-size: 0.9rem; }

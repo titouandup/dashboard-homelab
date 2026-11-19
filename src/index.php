@@ -59,20 +59,6 @@ $nbEnLigne = count(array_filter($enLigne));
         </div>
     </section>
 
-    <?php foreach (['temperature' => ['Température', '°C'], 'humidite' => ['Humidité', '%']] as $cle => [$nom, $unite]): ?>
-        <section class="serveur" data-salon="<?= $cle ?>" data-unite="<?= $unite ?>" <?= $etat[$cle] === null ? 'hidden' : '' ?>>
-            <h2><?= $nom ?></h2>
-            <!-- format identique à dashboard.js : virgule décimale, une décimale -->
-            <strong class="valeur"><?= $etat[$cle] === null ? '' : number_format($etat[$cle], 1, ',', '') . ' ' . $unite ?></strong>
-            <div class="historique" id="historique-<?= $cle ?>" hidden>
-                <h3>Dernières 24 h</h3>
-                <div class="graphique">
-                    <canvas id="graphique-<?= $cle ?>" role="img" aria-label="Courbe : <?= $nom ?>, dernières 24 heures"></canvas>
-                </div>
-            </div>
-        </section>
-    <?php endforeach; ?>
-
     <main class="grille">
         <?php foreach ($services as $i => $s): ?>
             <article class="carte <?= $enLigne[$i] ? 'ok' : 'ko' ?>">
@@ -84,6 +70,25 @@ $nbEnLigne = count(array_filter($enLigne));
             </article>
         <?php endforeach; ?>
     </main>
+
+    <section class="serveur" id="salon" <?= ($etat['temperature'] === null && $etat['humidite'] === null) ? 'hidden' : '' ?>>
+        <h2>Salon</h2>
+        <div class="mesures">
+            <?php foreach (['temperature' => ['Température', '°C'], 'humidite' => ['Humidité', '%']] as $cle => [$nom, $unite]): ?>
+                <div data-salon="<?= $cle ?>" data-unite="<?= $unite ?>" <?= $etat[$cle] === null ? 'hidden' : '' ?>>
+                    <span class="mesure-nom"><?= $nom ?></span>
+                    <!-- format identique à dashboard.js : virgule décimale, une décimale -->
+                    <strong class="valeur"><?= $etat[$cle] === null ? '' : number_format($etat[$cle], 1, ',', '') . ' ' . $unite ?></strong>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="historique" id="historique-salon" hidden>
+            <h3>Dernières 24 h</h3>
+            <div class="graphique">
+                <canvas id="graphique-salon" role="img" aria-label="Courbes de la température et de l'humidité sur les dernières 24 heures"></canvas>
+            </div>
+        </div>
+    </section>
 
     <footer>
         <a href="https://github.com/titouandup/dashboard-homelab">Code source</a>
