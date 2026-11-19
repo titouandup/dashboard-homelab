@@ -75,11 +75,11 @@ async function rafraichir() {
     }
 }
 
-// Récupère l'historique des 24 dernières heures.
+// Récupère l'historique des 24 dernières heures à l'adresse donnée.
 // Renvoie null au moindre problème ou s'il est vide : le graphique reste alors caché.
-async function chargerHistorique() {
+async function chargerHistorique(url) {
     try {
-        const reponse = await fetch('historique.php');
+        const reponse = await fetch(url);
         if (!reponse.ok) {
             return null;
         }
@@ -93,6 +93,31 @@ async function chargerHistorique() {
 
 const PERIODE_CRON = 5 * 60;   // secondes entre deux mesures : à garder identique à la ligne du cron
 
+// Un graphique par bloc de la page : d'où viennent les mesures, où les dessiner, quelles courbes.
+// variable : nom de la variable CSS de la couleur (le canvas ne lit pas le CSS, voir couleur()).
+// axe : min / max figent l'axe Y ; suggestedMin / suggestedMax donnent une plage minimale qui s'élargit si besoin.
+const GRAPHIQUES = [
+    {
+        url: 'historique.php', bloc: 'historique', canvas: 'graphique', unite: '%',
+        axe: { min: 0, max: 100 },
+        courbes: [
+            { cle: 'cpu',    nom: 'CPU',    variable: '--accent', tirets: [] },
+            { cle: 'ram',    nom: 'RAM',    variable: '--text',   tirets: [] },
+            { cle: 'disque', nom: 'Disque', variable: '--muted',  tirets: [6, 4] },
+        ],
+    },
+    {
+        url: 'historique-salon.php', bloc: 'historique-temperature', canvas: 'graphique-temperature', unite: '°C',
+        axe: { suggestedMin: 15, suggestedMax: 30 },
+        courbes: [{ cle: 'temperature', nom: 'Température', variable: '--accent', tirets: [] }],
+    },
+    {
+        url: 'historique-salon.php', bloc: 'historique-humidite', canvas: 'graphique-humidite', unite: '%',
+        axe: { suggestedMin: 20, suggestedMax: 80 },
+        courbes: [{ cle: 'humidite', nom: 'Humidité', variable: '--text', tirets: [] }],
+    },
+];
+
 // Lit une couleur du thème actuel : Chart.js dessine dans un canvas et ne comprend pas les variables CSS.
 function couleur(nom) {
     return getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
@@ -103,18 +128,20 @@ function formaterHeure(timestamp) {
     return new Date(timestamp * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Dessine (ou redessine) le graphique des 24 dernières heures.
-function dessinerHistorique(mesures) {
-    Chart.getChart('graphique')?.destroy();   // sinon Chart.js refuse un 2e graphique sur le même canvas
+// Dessine (ou redessine) un graphique des 24 dernières heures, décrit par un élément de GRAPHIQUES.
+function dessinerHistorique(mesures, g) {
+    Chart.getChart(g.canvas)?.destroy();   // sinon Chart.js refuse un 2e graphique sur le même canvas
     const texte = couleur('--text');
     const discret = couleur('--muted');
     const fin = Math.ceil(Date.now() / 3600000) * 3600;   // prochaine heure pleine : les repères de l'axe tombent sur des heures rondes
+    const avecUnite = (v) => v.toLocaleString('fr-FR') + ' ' + g.unite;
 
-    // Axe X = le temps réel : une panne de Proxmox laisse un vrai trou, car spanGaps coupe la courbe dès 3 mesures manquantes
-    const courbe = (cle, nom, trait, tirets) => ({
+    // Axe X = le temps réel : une panne laisse un vrai trou, car spanGaps coupe la courbe dès 3 mesures manquantes.
+    // typeof : un capteur hors ligne écrit null, ce point est simplement absent de sa courbe.
+    const courbe = ({ cle, nom, variable, tirets }) => ({
         label: nom,
-        data: mesures.map((m) => ({ x: m.heure, y: m[cle] })),
-        borderColor: trait,
+        data: mesures.filter((m) => typeof m[cle] === 'number').map((m) => ({ x: m.heure, y: m[cle] })),
+        borderColor: couleur(variable),
         borderDash: tirets,
         borderWidth: 2,
         pointRadius: 0,
@@ -122,15 +149,9 @@ function dessinerHistorique(mesures) {
         spanGaps: 3 * PERIODE_CRON,
     });
 
-    new Chart(document.getElementById('graphique'), {
+    new Chart(document.getElementById(g.canvas), {
         type: 'line',
-        data: {
-            datasets: [
-                courbe('cpu', 'CPU', couleur('--accent'), []),
-                courbe('ram', 'RAM', texte, []),
-                courbe('disque', 'Disque', discret, [6, 4]),
-            ],
-        },
+        data: { datasets: g.courbes.map(courbe) },
         options: {
             animation: false,
             maintainAspectRatio: false,
@@ -143,14 +164,14 @@ function dessinerHistorique(mesures) {
                     grid: { display: false },
                     ticks: { color: discret, stepSize: 4 * 3600, maxRotation: 0, callback: formaterHeure },
                 },
-                y: { min: 0, max: 100, grid: { color: couleur('--line') }, ticks: { color: discret, callback: (v) => v + ' %' } },
+                y: { ...g.axe, grid: { color: couleur('--line') }, ticks: { color: discret, callback: avecUnite } },
             },
             plugins: {
-                legend: { position: 'top', labels: { color: texte } },
+                legend: { display: g.courbes.length > 1, position: 'top', labels: { color: texte } },
                 tooltip: {
                     callbacks: {
                         title: (elements) => formaterHeure(elements[0].parsed.x),
-                        label: (c) => c.dataset.label + ' : ' + c.parsed.y + ' %',
+                        label: (c) => c.dataset.label + ' : ' + avecUnite(c.parsed.y),
                     },
                 },
             },
@@ -158,21 +179,25 @@ function dessinerHistorique(mesures) {
     });
 }
 
+const aRedessiner = [];   // une fonction par graphique affiché
+
 // Au chargement : récupère l'historique, affiche le bloc et dessine le graphique.
-// Au clic sur le bouton de thème : redessine, car le canvas ne suit pas le CSS.
-async function afficherHistorique() {
-    const mesures = await chargerHistorique();
+async function afficherHistorique(g) {
+    const mesures = await chargerHistorique(g.url);
     if (!mesures || typeof Chart === 'undefined') {
         return;   // pas de données, erreur ou Chart.js absent : le bloc reste caché
     }
-    document.getElementById('historique').hidden = false;
-    dessinerHistorique(mesures);
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('#theme')) {
-            dessinerHistorique(mesures);
-        }
-    });
+    document.getElementById(g.bloc).hidden = false;   // avant de dessiner : un canvas caché a une taille nulle
+    dessinerHistorique(mesures, g);
+    aRedessiner.push(() => dessinerHistorique(mesures, g));
 }
 
-afficherHistorique();
+// Au clic sur le bouton de thème : redessine tout, car le canvas ne suit pas le CSS.
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#theme')) {
+        aRedessiner.forEach((redessiner) => redessiner());
+    }
+});
+
+GRAPHIQUES.forEach(afficherHistorique);
 setInterval(rafraichir, 30000);
