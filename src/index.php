@@ -59,6 +59,20 @@ $nbEnLigne = count(array_filter($enLigne));
         </div>
     </section>
 
+    <?php foreach (['temperature' => ['Température', '°C'], 'humidite' => ['Humidité', '%']] as $cle => [$nom, $unite]): ?>
+        <section class="serveur" data-salon="<?= $cle ?>" <?= $etat[$cle] === null ? 'hidden' : '' ?>>
+            <h2><?= $nom ?></h2>
+            <!-- format identique à dashboard.js : virgule décimale, une décimale -->
+            <strong class="valeur"><?= $etat[$cle] === null ? '' : number_format($etat[$cle], 1, ',', '') . ' ' . $unite ?></strong>
+            <div class="historique" id="historique-<?= $cle ?>" hidden>
+                <h3>Dernières 24 h</h3>
+                <div class="graphique">
+                    <canvas id="graphique-<?= $cle ?>" role="img" aria-label="Courbe : <?= $nom ?>, dernières 24 heures"></canvas>
+                </div>
+            </div>
+        </section>
+    <?php endforeach; ?>
+
     <main class="grille">
         <?php foreach ($services as $i => $s): ?>
             <article class="carte <?= $enLigne[$i] ? 'ok' : 'ko' ?>">
