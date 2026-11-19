@@ -28,11 +28,30 @@ function mettreAJourServeur(serveur) {
     }
 }
 
+// Même format que index.php : virgule décimale, une décimale, puis l'unité.
+function formaterValeur(valeur, unite) {
+    return valeur.toFixed(1).replace('.', ',') + ' ' + unite;
+}
+
+// Met à jour les sections du salon : chacune est cachée si son capteur ne répond pas (null).
+// typeof et non !valeur : 0 est une vraie mesure. Et un non-nombre ferait planter toFixed(),
+// ce qui laisserait la page à moitié rafraîchie (le résumé et l'heure sont mis à jour après).
+function mettreAJourSalon(etat) {
+    for (const section of document.querySelectorAll('[data-salon]')) {
+        const valeur = etat[section.dataset.salon];
+        section.hidden = typeof valeur !== 'number';
+        if (!section.hidden) {
+            section.querySelector('.valeur').textContent = formaterValeur(valeur, section.dataset.unite);
+        }
+    }
+}
+
 // Applique l'état reçu de l'API à toute la page.
 // La forme de etat est vérifiée une seule fois, dans rafraichir() : pas de contrôle ici.
 function mettreAJourPage(etat) {
     mettreAJourServices(etat.services);
     mettreAJourServeur(etat.serveur);
+    mettreAJourSalon(etat);
 
     const nbEnLigne = etat.services.filter(Boolean).length;
     document.getElementById('resume').textContent = nbEnLigne + ' / ' + etat.services.length;

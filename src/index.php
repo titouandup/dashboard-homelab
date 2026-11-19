@@ -60,7 +60,7 @@ $nbEnLigne = count(array_filter($enLigne));
     </section>
 
     <?php foreach (['temperature' => ['Température', '°C'], 'humidite' => ['Humidité', '%']] as $cle => [$nom, $unite]): ?>
-        <section class="serveur" data-salon="<?= $cle ?>" <?= $etat[$cle] === null ? 'hidden' : '' ?>>
+        <section class="serveur" data-salon="<?= $cle ?>" data-unite="<?= $unite ?>" <?= $etat[$cle] === null ? 'hidden' : '' ?>>
             <h2><?= $nom ?></h2>
             <!-- format identique à dashboard.js : virgule décimale, une décimale -->
             <strong class="valeur"><?= $etat[$cle] === null ? '' : number_format($etat[$cle], 1, ',', '') . ' ' . $unite ?></strong>
